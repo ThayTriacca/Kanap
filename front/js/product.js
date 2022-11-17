@@ -59,6 +59,10 @@ function addColors(product) {
 buttonCart.addEventListener('click', addItemCart);
 
 function addItemCart(){
+    if (quantityItems.value == 0 || !itemColors.value) {
+        alert('Please select color and quantity!');
+        return;
+    }
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     console.log(cart);
     let identifier = idProductParams + '@' + itemColors.value;
@@ -69,9 +73,13 @@ function addItemCart(){
         let item = {
             identifier,
             productId: idProductParams,
+            productName: product.name,
+            productImg: product.imageUrl,
+            imgAlt: product.altTxt,
             itemColors: document.getElementById('colors').value,
             quantityItems: document.getElementById('quantity').value,
-            price: product.price
+            price: product.price,
+
         }
         cart.push(item);
     }; 
