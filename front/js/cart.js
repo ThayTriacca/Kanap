@@ -2,16 +2,16 @@
 let myCart = JSON.parse(localStorage.getItem('cart'));
 console.log(myCart);
 
-
 let buyItems = [];
 let cartSection = document.getElementById('cart__items');
 for (let product in myCart) {
   let productArticle = document.createElement('a');
+  productArticle.addEventListener('change', onChangeQty);
   productArticle.classList.add('cart__item');
   productArticle.setAttribute('data-identifier', `${myCart[product].identifier}`);
-  
+
   buyItems.push(myCart[product].productId);
-  
+
   productArticle.innerHTML =
     `<div class="cart__item__img">
     <img src="${myCart[product].productImg}" alt="${myCart[product].imgAlt}">
@@ -20,11 +20,11 @@ for (let product in myCart) {
     <div class="cart__item__content__description">
     <h2>${myCart[product].productName}</h2>
     <p>${myCart[product].itemColors}</p>
-    <p>${myCart[product].price}</p>
+    <p>€${myCart[product].price}</p>
     </div>
     <div class="cart__item__content__settings">
     <div class="cart__item__content__settings__quantity">
-    <p>Quantity : ${myCart[product].quantityItems}</p>
+    <p>Quantity : </p>
     <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${myCart[product].quantityItems}">
     </div>
     <div class="cart__item__content__settings__delete">
@@ -34,13 +34,18 @@ for (let product in myCart) {
     </div>`
 
   cartSection.appendChild(productArticle);
+  let deleteBtns = document.getElementsByClassName("deleteItem");
+  Array.from(deleteBtns).forEach(element => {
+    element.addEventListener('click', onDeleteItem);
+  });
 }
 
 
-//-------------------Update Cart---------------------------
 
 
-function updateCart() {
+//-------------------Update Total---------------------------
+
+function updateTotal() {
   let myCart = JSON.parse(localStorage.getItem('cart'))
   let qtyTotal = 0;
   let totalPrice = 0;
@@ -50,63 +55,47 @@ function updateCart() {
   }
   document.getElementById('totalPrice').innerHTML = totalPrice;
   document.getElementById('totalQuantity').innerHTML = qtyTotal;
+  document.getElementsByClassName('cart__item__content__settings__quantity').innerHTML = qtyTotal;
 };
 
-updateCart();
+updateTotal();
 
 
 //---------------Delete products------------------
-
-function deleteItemCart() {
-
-  let deleteBtn = document.getElementsByClassName('deleteItem');
-
-  for (let i = 0; i < deleteBtn.length; i++) {
-    let deleteItem = deleteBtn[i];
-    deleteItem.addEventListener('click', function (event) {
-      itemSelected = event.target;
-      let productIdentifier = itemSelected.closest('.cart__item').getAttribute('data-identifier');
-      itemSelected.closest('.cart__item').remove();
-      let productDeleted = myCart.find(cart => cart.identifier == productIdentifier);
-      if (productDeleted) {
-        let index = myCart.indexOf(productDeleted);
-        myCart.splice(index, 1);
-        localStorage.setItem('cart', JSON.stringify(myCart));
-        updateCart();
-      }
-    })
+function onDeleteItem(event) {
+  console.log("event", event);
+  let itemSelected = event.target;
+  let itemSelectedDom = itemSelected.closest('.cart__item');
+  console.log("item dom", itemSelectedDom);
+  console.log("itemselected", itemSelected.closest('.cart__item'));
+  let productIdentifier = itemSelectedDom.getAttribute('data-identifier');
+  let productDeleted = myCart.find(cart => cart.identifier == productIdentifier);
+  if (productDeleted) {
+    let index = myCart.indexOf(productDeleted);
+    myCart.splice(index, 1);
+    localStorage.setItem('cart', JSON.stringify(myCart));
+    updateTotal();
+    itemSelectedDom.remove();
   }
   localStorage.setItem('cart', JSON.stringify(myCart));
-};
-
-deleteItemCart();
-
+}
 
 //-----------------Change Quantity------------
-//event target closest 
-function changeQuantity() {
-  let quantityItems = document.querySelectorAll(".itemQuantity");
 
-  for (let i = 0; i < quantityItems.length; i++) {
-    quantityItems[i].addEventListener("change", (event) => {
-      event.preventDefault();
+function onChangeQty(event) {
+  itemSelected = event.target;
+  let itemSelectedDom = itemSelected.closest('.cart__item');
+  console.log("item dom", itemSelectedDom);
+  console.log("itemselected", itemSelected.closest('.cart__item'));
+  let productIdentifier = itemSelectedDom.getAttribute('data-identifier');
+  let productFound = myCart.find(cart => cart.identifier == productIdentifier);
+  if (productFound) {
+    productFound.quantityItems = itemSelected.value;
+    window.localStorage.setItem("cart", JSON.stringify(myCart));
+    updateTotal();
 
-      myCart[i].quantityItems = quantityItems[i].valueAsNumber;
-      window.localStorage.setItem("cart", JSON.stringify(myCart));
-      
-      updateCart();
-    })
   }
-};
-
-changeQuantity();
-
-
-//---------------Finish Order----------
-
-
-
-
+}
 //---------------FORM--------------
 
 //------------Access DOM Elements-----------
@@ -176,15 +165,52 @@ emailInput.addEventListener('blur', (event) => {
 });
 
 
-//--------------Submit Event Listener------------
+//--------------Submit Order------------
 
 submitButton.addEventListener('click', (event) => {
   event.preventDefault();
   const validate = form.checkValidity();
   form.reportValidity();
   if (validate) {
+
+    let contact = {
+      firstName: firstNameInput.value,
+      lastName: lastNameInput.value,
+      address: addressInput.value,
+      city: cityInput.value,
+      email: emailInput.value,
+    }
+    console.log(contact)
+    localStorage.setItem('contact', JSON.stringify(contact));
+
+    let products = [];
+    for (let i = 0; i < myCart.length; i++) {
+      products.push([myCart[i].identifier, myCart[i].quantityItems]);
+    }
+    console.log("products" + products);
+
+    finalOrder = { contact: contact, products: products };
+    console.log("finalOrder" + finalOrder);
+
+    //-----Sending Info--------
+    fetch("http://localhost:3000/api/products/order", {
+      method: "POST",
+      body: JSON.stringify(finalOrder),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const orderId = data.orderId
+        console.log(orderId);
+        // window.location.href = "/front/html/confirmation.html" + "?orderId=" + orderId
+      })
+      .catch((err) => console.error(err))
+
     form.reset();
     return;
   }
+
   emailError.innerHTML = emailInput.validationMessage;
 });
