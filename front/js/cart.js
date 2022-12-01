@@ -166,51 +166,61 @@ emailInput.addEventListener('blur', (event) => {
 
 
 //--------------Submit Order------------
+function postOrder() {
+  submitButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    const validate = form.checkValidity();
+    form.reportValidity();
+    if (validate) {
 
-submitButton.addEventListener('click', (event) => {
-  event.preventDefault();
-  const validate = form.checkValidity();
-  form.reportValidity();
-  if (validate) {
-
-    let contact = {
-      firstName: firstNameInput.value,
-      lastName: lastNameInput.value,
-      address: addressInput.value,
-      city: cityInput.value,
-      email: emailInput.value,
-    }
-    console.log(contact)
-    localStorage.setItem('contact', JSON.stringify(contact));
-
-    let products = [];
-    for (let i = 0; i < myCart.length; i++) {
-      products.push([myCart[i].identifier, myCart[i].quantityItems]);
-    }
-    console.log("products" + products);
-
-    finalOrder = { contact: contact, products: products };
-    console.log("finalOrder" + finalOrder);
-
-    //-----Sending Info--------
-    fetch("http://localhost:3000/api/products/order", {
-      method: "POST",
-      body: JSON.stringify(finalOrder),
-      headers: {
-        "Content-Type": "application/json"
+      
+      let products = [];
+      for (let i = 0; i < myCart.length; i++) {
+        products.push(myCart[i].productId);
       }
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const orderId = data.orderId
-        console.log(orderId);
-        // window.location.href = "/front/html/confirmation.html" + "?orderId=" + orderId
-      })
-      .catch((err) => console.error(err))
+      console.log("products" + products);
 
-    form.reset();
-    return;
-  }
+      let order = {
+        contact: {
+        firstName: firstNameInput.value,
+        lastName: lastNameInput.value,
+        address: addressInput.value,
+        city: cityInput.value,
+        email: emailInput.value,},
 
-  emailError.innerHTML = emailInput.validationMessage;
-});
+        products: products,
+      }
+      console.log("order" + JSON.stringify(order))
+      localStorage.setItem('order', JSON.stringify(order));
+
+      //-----Sending Info--------
+
+      let sendOptions = {
+        method: 'POST',
+        body: JSON.stringify(order),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      };
+
+      fetch("http://localhost:3000/api/products/order", sendOptions)
+        .then((response) => response.json())
+        .then((data) => {
+          localStorage.clear();
+          localStorage.setItem("orderId", data.orderId);
+          const orderId = data.orderId
+          console.log("orderId" + orderId);
+          window.location.href = "/front/html/confirmation.html" + "?orderId=" + orderId
+        })
+        .catch((err) => {
+          alert ("Error" + err.message)});
+
+      form.reset();
+      return;
+    }
+
+    emailError.innerHTML = emailInput.validationMessage;
+  })
+};
+postOrder();

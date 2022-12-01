@@ -1,13 +1,11 @@
 //----Display Order ID-----
 
 function diplayOrderId(){
-const orderId = document.getElementById('orderId');
-orderId.textContent = orderNumber;
-}
+    const orderNumber = document.getElementById("orderId");
+    orderNumber.innerText = localStorage.getItem("orderId");
+    console.log(localStorage.getItem("orderId"))
+    localStorage.clear();
+};
 
-//-----Order Number-------
+diplayOrderId();
 
-function getOrderNumber(){
-    let request = window.location.search;
-    
-}
