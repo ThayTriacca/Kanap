@@ -1,4 +1,4 @@
-<img src="https://github.com/ThayTriacca/Kanap/blob/master/front/images/logo.png" alt="Image" width="500" height="400">
+<img src="https://github.com/ThayTriacca/Kanap/blob/master/front/images/logo.png" alt="Image" width="250" height="250">
 
 # Kanap
 #### Build an e-commerce Website with JavaScript
